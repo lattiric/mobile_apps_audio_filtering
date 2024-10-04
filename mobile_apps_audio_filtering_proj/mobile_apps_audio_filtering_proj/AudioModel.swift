@@ -13,6 +13,7 @@ class AudioModel {
     
     // MARK: Properties
     private var BUFFER_SIZE:Int
+    
     // thse properties are for interfaceing with the API
     // the user can access these arrays at any time and plot them if they like
     var timeData:[Float]

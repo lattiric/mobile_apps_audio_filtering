@@ -20,11 +20,22 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		58603C272CB0849200D97350 /* Exceptions for "mobile_apps_audio_filtering_proj" folder in "Compile Sources" phase from "mobile_apps_audio_filtering_proj" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 58C6418A2CAE597A003F2A57 /* Sources */;
+			membershipExceptions = (
+				"mobile_apps_audio_filtering_proj-Bridging-Header.h",
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		58C641902CAE597A003F2A57 /* mobile_apps_audio_filtering_proj */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				58C641A02CAE597C003F2A57 /* Exceptions for "mobile_apps_audio_filtering_proj" folder in "mobile_apps_audio_filtering_proj" target */,
+				58603C272CB0849200D97350 /* Exceptions for "mobile_apps_audio_filtering_proj" folder in "Compile Sources" phase from "mobile_apps_audio_filtering_proj" target */,
 			);
 			path = mobile_apps_audio_filtering_proj;
 			sourceTree = "<group>";
@@ -161,6 +172,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "SMU.mobile-apps-audio-filtering-proj";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "mobile_apps_audio_filtering_proj/mobile_apps_audio_filtering_proj-Bridging-Header.h";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -189,6 +202,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "SMU.mobile-apps-audio-filtering-proj";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "mobile_apps_audio_filtering_proj/mobile_apps_audio_filtering_proj-Bridging-Header.h";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
