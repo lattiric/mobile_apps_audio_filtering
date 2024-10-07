@@ -137,7 +137,7 @@
                         <outlet property="freq1" destination="u0g-tG-Uzj" id="35n-WL-sYw"/>
                         <outlet property="freq1Label" destination="DcJ-qD-gm3" id="zTx-G9-cKT"/>
                         <outlet property="freq2" destination="IfG-eX-cOp" id="SnI-Fd-PFb"/>
-                        <outlet property="freq2Label" destination="swh-5V-Wem" id="V1s-vl-C3K"/>
+                        <outlet property="freq2Label" destination="swh-5V-Wem" id="Ehq-QW-gNr"/>
                         <outlet property="userView" destination="r4b-6v-4Lo" id="hee-0c-n82"/>
                     </connections>
                 </viewController>
