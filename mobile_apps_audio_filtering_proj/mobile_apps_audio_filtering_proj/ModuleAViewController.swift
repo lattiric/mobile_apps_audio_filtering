@@ -34,6 +34,7 @@ class ModuleAViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .white
+        var run_counter = 0
         
         // graph and audio processing (taken from original push, just moved to modules)
         setupGraph()
@@ -44,9 +45,20 @@ class ModuleAViewController: UIViewController {
         Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
             self.updateGraph()
         }
-        Timer.scheduledTimer(withTimeInterval: 1.00, repeats: true) { _ in
-            if(self.audio.fftData[0] > -50.0){
+        Timer.scheduledTimer(withTimeInterval: 0.10, repeats: true) { _ in
+//            if(self.audio.timeData[0] > 0.037){
+//                print(self.audio.timeData[0])
+//            }
+            if(self.audio.timeData[0] > 0.037){
                 self.updateLabels()
+                run_counter = 0
+            } else if run_counter > 40{
+                if let label1 = self.freq1, let label2 = self.freq2 {
+                    label1.text = "Noise"
+                    label2.text = "Noise"
+                }
+            } else {
+                run_counter = run_counter+1
             }
         }
     }
@@ -112,7 +124,6 @@ class ModuleAViewController: UIViewController {
         var max_list: [Int: Int] = [:]
         var max_list_val: [Int: Float] = [:]
         var hz_per_index = 44100.0/Double(AudioConstants.AUDIO_BUFFER_SIZE)
-        print(hz_per_index)
         
         for i in 1...(data.count-5) {
             window = Array(data[(i)...(i)+4])
@@ -146,7 +157,7 @@ class ModuleAViewController: UIViewController {
         // Get first highest frequency from dict
         if let (key, _) = possible_peaks.max(by: { $0.value < $1.value }){
             cur_hz_1 = Double(key)*hz_per_index
-            print(String(key) + " " + String(cur_hz_1))
+//            print(String(key) + " " + String(cur_hz_1))
             possible_peaks.removeValue(forKey: key)
         } else {
             cur_hz_1 = Double(0.0)
@@ -155,7 +166,7 @@ class ModuleAViewController: UIViewController {
         // Get second highest frequency from dict
         if let (key, _) = possible_peaks.max(by: {  $0.value < $1.value }){
             cur_hz_2 = Double(key)*hz_per_index
-            print(key)
+//            print(key)
             
         } else {
             cur_hz_2 = Double(0.0)
