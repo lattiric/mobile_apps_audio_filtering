@@ -63,12 +63,17 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="p2A-D8-naU">
+                                <rect key="frame" x="137" y="458" width="118" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            </slider>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="WDW-iX-xWR"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <navigationItem key="navigationItem" id="Tnn-eh-8Cx"/>
                     <connections>
+                        <outlet property="hzSlider" destination="p2A-D8-naU" id="6FP-o6-QM1"/>
                         <outlet property="userView" destination="0yc-x8-X7H" id="4ug-3o-xOD"/>
                     </connections>
                 </viewController>
