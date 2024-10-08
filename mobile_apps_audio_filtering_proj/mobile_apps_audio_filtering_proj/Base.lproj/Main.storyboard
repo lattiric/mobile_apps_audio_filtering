@@ -66,12 +66,20 @@
                                 <rect key="frame" x="137" y="458" width="118" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </slider>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hWj-je-DzN">
+                                <rect key="frame" x="65" y="604" width="286" height="21"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="WDW-iX-xWR"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <navigationItem key="navigationItem" id="Tnn-eh-8Cx"/>
                     <connections>
+                        <outlet property="gestureLabel" destination="hWj-je-DzN" id="J18-we-KGi"/>
                         <outlet property="hzSlider" destination="p2A-D8-naU" id="6FP-o6-QM1"/>
                         <outlet property="userView" destination="0yc-x8-X7H" id="4ug-3o-xOD"/>
                     </connections>
