@@ -21,6 +21,8 @@ class ModuleBViewController: UIViewController {
             return Novocaine.audioManager()
         }()
     
+    let audio = AudioModel(buffer_size: 0)
+    
     /*
     let audio = AudioModel(buffer_size: AudioConstants.AUDIO_BUFFER_SIZE)
     lazy var graph: MetalGraph? = {
@@ -46,11 +48,17 @@ class ModuleBViewController: UIViewController {
          */
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        audio.pause()
+    }
+    
     
     
     @IBAction func sliderValueChanged(_ sender: Any){
         var sineFrequency = 17000 + (3000 * hzSlider.value)
-        startProcessingSinewaveForPlayback(withFreq: sineFrequency)
+        audio.startProcessingSinewaveForPlayback(withFreq: sineFrequency)
+        audio.play()
     }
     
     func startProcessingSinewaveForPlayback(withFreq:Float=330.0){
@@ -59,6 +67,7 @@ class ModuleBViewController: UIViewController {
                 // swift sine wave loop creation
                 manager.outputBlock = self.handleSpeakerQueryWithSinusoid
             }
+            
         }
  
     
