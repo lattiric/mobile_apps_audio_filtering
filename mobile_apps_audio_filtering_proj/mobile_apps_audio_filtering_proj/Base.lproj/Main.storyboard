@@ -31,7 +31,6 @@
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="tinted" title="Module B"/>
                                 <connections>
-                                    <action selector="goToModuleB:" destination="BYZ-38-t0r" eventType="touchUpInside" id="3a2-ug-rvV"/>
                                     <segue destination="1Ky-NN-vUz" kind="show" identifier="showModuleB" id="189-ct-I0F"/>
                                 </connections>
                             </button>
