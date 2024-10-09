@@ -137,7 +137,7 @@ class ModuleAViewController: UIViewController {
         var max_list_val: [Int: Float] = [:]
         let hz_per_index = 44100.0/Double(AudioConstants.AUDIO_BUFFER_SIZE)
         
-        for i in 1...(data.count-6) {
+        for i in 9...(data.count-6) {
             window = Array(data[(i)...(i)+5])
 
             if let win_max = window.max(){
@@ -193,18 +193,20 @@ class ModuleAViewController: UIViewController {
         self.peak_count = self.peak_count+1.0
         self.harm_sum = self.harm_sum+harmonic_value
         self.harm_count = self.harm_count+1.0
-//        print(peak_sum/peak_count)
-//        print(harm_sum/harm_count)
+        print(peak_sum/peak_count)
+        print(harm_sum/harm_count)
         
         
         
         
         print("Percent Ratio: "+String(ratio_percent)+" %")
-        if (ratio_percent > 0.10 && ratio_percent < 0.42) || (ratio_percent > 0.80 && ratio_percent < 1.00){
+//        if (ratio_percent > 0.10 && ratio_percent < 0.42) || (ratio_percent > 0.80 && ratio_percent < 1.00){
+        if (ratio_percent > -1.2 && ratio_percent < 0.3){
 //            print("OOOOOOOOOOO")
             vowelLabel.text = "OOOOOOOOOO"
         }
-        else if (ratio_percent > 0.42 && ratio_percent < 0.80) || (ratio_percent > 0.00 && ratio_percent < 0.10){
+//        else if (ratio_percent > 0.42 && ratio_percent < 0.80) || (ratio_percent > 0.00 && ratio_percent < 0.10){
+        else if (ratio_percent > 0.3 && ratio_percent < 1.2){
 //            print("AAAAAAAAAA")
             vowelLabel.text = "AAAAAAAAAA"
         }
