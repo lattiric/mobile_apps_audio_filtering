@@ -96,9 +96,10 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Module A" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pAG-iT-x5n">
-                                <rect key="frame" x="137" y="103" width="118" height="21"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Vowel Detection:" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pAG-iT-x5n">
+                                <rect key="frame" x="198" y="103" width="179" height="34"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="18"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
@@ -135,14 +136,25 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Inactive" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TKc-uO-t5M">
+                                <rect key="frame" x="198" y="145" width="179" height="21"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="thC-p9-rZk">
+                                <rect key="frame" x="28" y="103" width="164" height="63"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="tinted" title="Toggle Vowel Detection"/>
+                                <connections>
+                                    <action selector="vowelToggle:" destination="Fo6-2C-Mvi" eventType="touchUpInside" id="D8G-fh-ILU"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="MMh-Cu-vRA"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                        <constraints>
-                            <constraint firstItem="pAG-iT-x5n" firstAttribute="top" secondItem="MMh-Cu-vRA" secondAttribute="top" constant="416" id="A0j-Pg-Otz"/>
-                            <constraint firstItem="MMh-Cu-vRA" firstAttribute="trailing" secondItem="pAG-iT-x5n" secondAttribute="trailing" constant="120" id="FYK-wz-XV5"/>
-                            <constraint firstItem="pAG-iT-x5n" firstAttribute="leading" secondItem="MMh-Cu-vRA" secondAttribute="leading" constant="155" id="mc4-1c-aWf"/>
-                        </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="RIB-cy-8d4"/>
                     <connections>
@@ -151,6 +163,7 @@
                         <outlet property="freq2" destination="IfG-eX-cOp" id="SnI-Fd-PFb"/>
                         <outlet property="freq2Label" destination="swh-5V-Wem" id="Ehq-QW-gNr"/>
                         <outlet property="userView" destination="r4b-6v-4Lo" id="hee-0c-n82"/>
+                        <outlet property="vowelLabel" destination="TKc-uO-t5M" id="ppg-RE-AC3"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ftr-NM-5vU" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

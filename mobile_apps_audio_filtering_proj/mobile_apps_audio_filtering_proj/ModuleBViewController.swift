@@ -137,6 +137,7 @@ class ModuleBViewController: UIViewController {
                 manager.outputBlock = self.handleSpeakerQueryWithSinusoid
                 manager.play()
             }
+            
         }
     
     private func handleSpeakerQueryWithSinusoid(data:Optional<UnsafeMutablePointer<Float>>, numFrames:UInt32, numChannels: UInt32){
