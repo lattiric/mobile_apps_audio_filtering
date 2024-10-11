@@ -15,218 +15,176 @@ class ModuleBViewController: UIViewController {
     
     @IBOutlet weak var hzSlider: UISlider!
     struct AudioConstants {
-        static let AUDIO_BUFFER_SIZE = 1024 * 4
-    }
-    
-    private lazy var audioManager:Novocaine? = {
-            return Novocaine.audioManager()
-        }()
-    
-    let audio = AudioModel(buffer_size: AudioConstants.AUDIO_BUFFER_SIZE)
-    
-    private var phase:Float = 0.0
-    private var phaseIncrement:Float = 0.0
-    private var sineWaveRepeatMax:Float = Float(2*Double.pi)
-    
-    private var previousFrequency: Float = 0.0
-    private var currentFrequency: Float = 0.0
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        self.view.backgroundColor = .white
-        
-        hzSlider.addTarget(self,action:#selector(self.sliderValueChanged(_:)),for:UIControl.Event.valueChanged)
-        
-        startMicrophoneProcessing()
-                    
-    }
-    
-    @IBAction func sliderValueChanged(_ sender: Any){
-        let sineFrequency = 17000 + (3000 * hzSlider.value)
-        startProcessingSinewaveForPlayback(withFreq: sineFrequency)
-    }
-    
-    func startProcessingSinewaveForPlayback(withFreq:Float=330.0){
-        let sampleRate: Float = 44100.0
-            phaseIncrement = (2.0 * .pi * withFreq) / sampleRate
-    
-            if let manager = self.audioManager{
-                // swift sine wave loop creation
-                manager.outputBlock = self.handleSpeakerQueryWithSinusoid
-                manager.play()
-            }
+            static let AUDIO_BUFFER_SIZE = 1024 * 4
         }
-    
-    private func handleSpeakerQueryWithSinusoid(data:Optional<UnsafeMutablePointer<Float>>, numFrames:UInt32, numChannels: UInt32){
-        // while pretty fast, this loop is still not quite as fast as
-        // writing the code in c, so I placed a function in Novocaine to do it for you
-        // use setOutputBlockToPlaySineWave() in Novocaine
-        // EDIT: fixed in 2023
-        if let arrayData = data{
-            var i = 0
-            let chan = Int(numChannels)
-            let frame = Int(numFrames)
-            if chan==1{
-                while i<frame{
-                    arrayData[i] = sin(phase)
-                    phase += phaseIncrement
-                    if (phase >= sineWaveRepeatMax) { phase -= sineWaveRepeatMax }
-                    i+=1
-                }
-            }else if chan==2{
-                let len = frame*chan
-                while i<len{
-                    arrayData[i] = sin(phase)
-                    arrayData[i+1] = arrayData[i]
-                    phase += phaseIncrement
-                    if (phase >= sineWaveRepeatMax) { phase -= sineWaveRepeatMax }
-                    i+=2
+        
+        private lazy var audioManager:Novocaine? = {
+                return Novocaine.audioManager()
+            }()
+        
+        let audio = AudioModel(buffer_size: AudioConstants.AUDIO_BUFFER_SIZE)
+        
+        private var phase:Float = 0.0
+        private var phaseIncrement:Float = 0.0
+        private var sineWaveRepeatMax:Float = Float(2*Double.pi)
+        
+        private var emittedFrequency: Float = 17000.0 // Default starting frequency
+            private var baselineLowerMagnitudes: [Float] = []
+            private var baselineUpperMagnitudes: [Float] = []
+            private var isBaselineCaptured = false
+            private var baselineCaptureTime: Double = 3.0 // Capture baseline for 3 seconds
+            private var baselineCaptureStart: Date?
+            private var sensitivityFactor: Float = 0.6 // Adjust based on testing
+            
+            override func viewDidLoad() {
+                super.viewDidLoad()
+                self.view.backgroundColor = .white
+                
+                hzSlider.addTarget(self, action: #selector(self.sliderValueChanged(_:)), for: .valueChanged)
+                
+                startMicrophoneProcessing()
+                startProcessingSinewaveForPlayback(withFreq: emittedFrequency)
+                
+                // Start capturing baseline
+                baselineCaptureStart = Date()
+            }
+            
+            @IBAction func sliderValueChanged(_ sender: Any) {
+                let emittedFrequency = 17000 + (3000 * hzSlider.value)
+                startProcessingSinewaveForPlayback(withFreq: emittedFrequency)
+            }
+            
+            func startProcessingSinewaveForPlayback(withFreq: Float = 330.0) {
+                let sampleRate: Float = 44100.0
+                phaseIncrement = (2.0 * .pi * withFreq) / sampleRate
+                
+                if let manager = self.audioManager {
+                    manager.outputBlock = self.handleSpeakerQueryWithSinusoid
+                    manager.play()
                 }
             }
-                            
-        }
-    }
-    
-    private func startMicrophoneProcessing() {
-            audioManager?.inputBlock = { [weak self] data, numFrames, numChannels in
-                self?.processMicrophoneInput(data: data, numFrames: numFrames, numChannels: numChannels)
-            }
-        }
-    
-    private func processMicrophoneInput(data: UnsafeMutablePointer<Float>?, numFrames: UInt32, numChannels: UInt32) {
-            guard let data = data else { return }
             
-            // Perform FFT on the incoming audio data to get frequency spectrum
-            let fftData = performFFT(on: data, with: numFrames)
-            
-            // Analyze the frequency data to detect shifts
-            currentFrequency = analyzeFrequencyData(fftData)
-            
-            // Use the detected frequency to determine gesture direction
-            recognizeGesture(currentFrequency)
-        }
-    
-    private func performFFT(on data: UnsafeMutablePointer<Float>, with numFrames: UInt32) -> [Float] {
-        // Create an FFT setup
-        let fftSetup = vDSP_create_fftsetup(vDSP_Length(log2(Float(numFrames))), FFTRadix(kFFTRadix2))
-        
-        // Allocate memory for real and imaginary parts
-        let realp = UnsafeMutablePointer<Float>.allocate(capacity: Int(numFrames))
-        let imagp = UnsafeMutablePointer<Float>.allocate(capacity: Int(numFrames))
-        
-        var splitComplex = DSPSplitComplex(realp: realp, imagp: imagp)
-        
-        // Perform the FFT
-        vDSP_ctoz(UnsafePointer<DSPComplex>(OpaquePointer(data)), 2, &splitComplex, 1, vDSP_Length(numFrames / 2))
-        vDSP_fft_zrip(fftSetup!, &splitComplex, 1, vDSP_Length(log2(Float(numFrames))), FFTDirection(FFT_FORWARD))
-        
-        // Calculate the magnitude
-        var magnitudes = [Float](repeating: 0.0, count: Int(numFrames / 2))
-        vDSP_zvmags(&splitComplex, 1, &magnitudes, 1, vDSP_Length(numFrames / 2))
-        
-        // Clean up FFT setup and allocated memory
-        vDSP_destroy_fftsetup(fftSetup)
-        realp.deallocate()  // Free the allocated memory for realp
-        imagp.deallocate()  // Free the allocated memory for imagp
-        
-        return magnitudes
-    }
-
-    private func analyzeFrequencyData(_ fftData: [Float]) -> Float {
-        // Find the index of the peak magnitude
-        guard let peakIndex = fftData.enumerated().max(by: { $0.element < $1.element })?.offset else {
-            return 0.0
-        }
-        
-        // Calculate the corresponding frequency
-        let sampleRate: Float = 44100.0 // Your sample rate
-        let frequency = Float(peakIndex) * (sampleRate / Float(fftData.count))
-        
-        return frequency
-    }
-
-        private func recognizeGesture(_ frequency: Float) {
-            let frequencyDifference = frequency - previousFrequency
-            let threshold: Float = 0.5 // Set this value based on your needs
-
-                // Ignore changes smaller than the threshold
-                if abs(frequencyDifference) < threshold {
-                    return // Ignore small changes
+            private func handleSpeakerQueryWithSinusoid(data: Optional<UnsafeMutablePointer<Float>>, numFrames: UInt32, numChannels: UInt32) {
+                if let arrayData = data {
+                    var i = 0
+                    let chan = Int(numChannels)
+                    let frame = Int(numFrames)
+                    if chan == 1 {
+                        while i < frame {
+                            arrayData[i] = sin(phase)
+                            phase += phaseIncrement
+                            if phase >= sineWaveRepeatMax { phase -= sineWaveRepeatMax }
+                            i += 1
+                        }
+                    } else if chan == 2 {
+                        let len = frame * chan
+                        while i < len {
+                            arrayData[i] = sin(phase)
+                            arrayData[i + 1] = arrayData[i]
+                            phase += phaseIncrement
+                            if phase >= sineWaveRepeatMax { phase -= sineWaveRepeatMax }
+                            i += 2
+                        }
+                    }
                 }
-
-                var gestureText = ""
-                if frequencyDifference > 0 {
-                    gestureText = "Gesture Detected: Moving Towards"
-                } else if frequencyDifference < 0 {
-                    gestureText = "Gesture Detected: Moving Away"
+            }
+            
+            private func startMicrophoneProcessing() {
+                audioManager?.inputBlock = { [weak self] data, numFrames, numChannels in
+                    self?.processMicrophoneInput(data: data, numFrames: numFrames, numChannels: numChannels)
+                }
+            }
+            
+            private func processMicrophoneInput(data: UnsafeMutablePointer<Float>?, numFrames: UInt32, numChannels: UInt32) {
+                guard let data = data else { return }
+                
+                // Perform FFT on microphone input
+                let fftData = performFFT(on: data, with: numFrames)
+                
+                // Analyze frequency and detect gesture
+                detectGesture(fftData)
+            }
+            
+            private func performFFT(on data: UnsafeMutablePointer<Float>, with numFrames: UInt32) -> [Float] {
+                let fftSetup = vDSP_create_fftsetup(vDSP_Length(log2(Float(numFrames))), FFTRadix(kFFTRadix2))
+                
+                let realp = UnsafeMutablePointer<Float>.allocate(capacity: Int(numFrames))
+                let imagp = UnsafeMutablePointer<Float>.allocate(capacity: Int(numFrames))
+                var splitComplex = DSPSplitComplex(realp: realp, imagp: imagp)
+                
+                vDSP_ctoz(UnsafePointer<DSPComplex>(OpaquePointer(data)), 2, &splitComplex, 1, vDSP_Length(numFrames / 2))
+                vDSP_fft_zrip(fftSetup!, &splitComplex, 1, vDSP_Length(log2(Float(numFrames))), FFTDirection(FFT_FORWARD))
+                
+                var magnitudes = [Float](repeating: 0.0, count: Int(numFrames / 2))
+                vDSP_zvmags(&splitComplex, 1, &magnitudes, 1, vDSP_Length(numFrames / 2))
+                
+                vDSP_destroy_fftsetup(fftSetup)
+                realp.deallocate()
+                imagp.deallocate()
+                
+                return magnitudes
+            }
+            
+            private var previousFFTData: [Float] = []
+            
+            private func detectGesture(_ fftData: [Float]) {
+                guard let maxIndex = fftData.firstIndex(of: fftData.max()!) else { return }
+                
+                let range = 20
+                let lowerBound = max(0, maxIndex - range)
+                let upperBound = min(fftData.count - 1, maxIndex + range)
+                
+                let currentLowerMagnitudes = fftData[lowerBound..<maxIndex]
+                let currentUpperMagnitudes = fftData[(maxIndex + 1)...upperBound]
+                
+                // Check if we're still within the baseline capture period
+                if let start = baselineCaptureStart, Date().timeIntervalSince(start) < baselineCaptureTime {
+                    baselineLowerMagnitudes = Array(currentLowerMagnitudes)
+                    baselineUpperMagnitudes = Array(currentUpperMagnitudes)
+                    DispatchQueue.main.async {
+                        self.gestureLabel.text = "No Gesture Detected (Baseline Capturing...)"
+                    }
+                    return
+                }
+                
+                // Baseline has been captured
+                isBaselineCaptured = true
+                
+                // Calculate the relative change in magnitudes
+                let lowerChange = calculateAverageChange(currentMagnitudes: currentLowerMagnitudes, baselineMagnitudes: baselineLowerMagnitudes)
+                let upperChange = calculateAverageChange(currentMagnitudes: currentUpperMagnitudes, baselineMagnitudes: baselineUpperMagnitudes)
+                
+                if lowerChange > sensitivityFactor {
+                    DispatchQueue.main.async {
+                        self.gestureLabel.text = "Gesture Detected: Moving Away"
+                    }
+                } else if upperChange > sensitivityFactor {
+                    DispatchQueue.main.async {
+                        self.gestureLabel.text = "Gesture Detected: Moving Towards"
+                    }
                 } else {
-                    gestureText = "Gesture Detected: No Movement"
+                    DispatchQueue.main.async {
+                        self.gestureLabel.text = "No Gesture Detected"
+                    }
                 }
-
-                DispatchQueue.main.async {
-                    self.gestureLabel.text = gestureText
-                }
-
-                // Update previous frequency for next analysis
-                previousFrequency = frequency
-        }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        audio.pause()
-    }
-
-    
-    
-    
-    
-    
-    /*
-    
-    
-    func setupGraph() {
-        if let graph = self.graph {
-            graph.setBackgroundColor(r: 0, g: 0, b: 0, a: 1)
-
-            graph.addGraph(withName: "fft",
-                           shouldNormalizeForFFT: true,
-                           numPointsInGraph: AudioConstants.AUDIO_BUFFER_SIZE / 2)
-            graph.addGraph(withName: "fft_zoomed",
-                           shouldNormalizeForFFT: true,
-                           numPointsInGraph: AudioConstants.AUDIO_BUFFER_SIZE / 20)
-            graph.addGraph(withName: "time",
-                           numPointsInGraph: AudioConstants.AUDIO_BUFFER_SIZE)
-            graph.addGraph(withName: "20 Pts Graph",
-                           shouldNormalizeForFFT: true,
-                           numPointsInGraph: 20)
-
-            graph.makeGrids()
-        }
-    }
-
-    func updateGraph() {
-        if let graph = self.graph {
-            graph.updateGraph(data: audio.fftData, forKey: "fft")
-
-            let zoomedArray: [Float] = Array(audio.fftData[20...])
-            graph.updateGraph(data: zoomedArray, forKey: "fft_zoomed")
-
-            graph.updateGraph(data: audio.timeData, forKey: "time")
-
-            var avgdArray: [Float] = []
-            let chunkSize = audio.fftData.count / 20
-            for num in 0...(19) {
-                avgdArray.append(vDSP.maximum(audio.fftData[num * chunkSize...(num * chunkSize) + (chunkSize - 1)]))
+                
+                previousFFTData = fftData
             }
-            graph.updateGraph(data: avgdArray, forKey: "20 Pts Graph")
+            
+            private func calculateAverageChange(currentMagnitudes: ArraySlice<Float>, baselineMagnitudes: [Float]) -> Float {
+                let changes = zip(currentMagnitudes, baselineMagnitudes).map { (current, baseline) in
+                    return abs(current - baseline) / max(baseline, 0.1)
+                }
+                return changes.reduce(0, +) / Float(changes.count)
+            }
+            
+            private func frequencyFromIndex(_ index: Int) -> Float {
+                let nyquist = Float(audio.samplingRate) / 2.0
+                return Float(index) * nyquist / Float(AudioConstants.AUDIO_BUFFER_SIZE / 2)
+            }
+            
+            override func viewDidDisappear(_ animated: Bool) {
+                super.viewDidDisappear(animated)
+                audio.pause()
+            }
         }
-    }
-
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        audio.pause() 
-    }
-    
-    
-    */
-}
