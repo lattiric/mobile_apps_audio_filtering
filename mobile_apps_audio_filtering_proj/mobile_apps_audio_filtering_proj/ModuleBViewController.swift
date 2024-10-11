@@ -66,8 +66,10 @@ class ModuleBViewController: UIViewController {
         } //end of #2
         
         //adding this #3
+        
+        startMicrophoneProcessing()
         audio.startMicrophoneProcessing(withFps: 20) // preferred number of FFT calculations per second
-
+        
         audio.play()
         
         Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
@@ -76,6 +78,9 @@ class ModuleBViewController: UIViewController {
         //end of #3
         
         hzSlider.addTarget(self,action:#selector(self.sliderValueChanged(_:)),for:UIControl.Event.valueChanged)
+        
+        //startProcessingSinewaveForPlayback()
+        
         
         //audio.startMicrophoneProcessing()
                     
@@ -97,23 +102,62 @@ class ModuleBViewController: UIViewController {
 //            )
 //        }
 //    } //end of #4
+//    func updateGraph() {
+//        if let graph = self.graph {
+//            // Update the main FFT graph (in dB)
+//            graph.updateGraph(
+//                data: self.audio.fftData,
+//                forKey: "fft"
+//            )
+//
+//            let zoomArray: [Float] = Array(self.audio.fftData[20...])
+//            //let zoomArray: [Float] = Array(self.audio.fftData[20...80])
+//            //let zoomArray: [Float] = Array(self.audio.fftData[20...150])
+////            let startIdx:Int = 30 + AudioConstants.AUDIO_BUFFER_SIZE/audio.samplingRate
+////            let subArray:[Float] = Array(self.audio.fftData[startIdx...startIdx+300])
+//            graph.updateGraph(
+//                data: zoomArray,
+//                //data: subArray,
+//                forKey: "fftZoomed"
+//            )
+//        }
+//    } //end of #4
+    
     func updateGraph() {
         if let graph = self.graph {
-            // Update the main FFT graph (in dB)
+            // Update the main FFT graph (this is the full range graph)
             graph.updateGraph(
                 data: self.audio.fftData,
                 forKey: "fft"
             )
 
-            let zoomArray: [Float] = Array(self.audio.fftData[20...])
-            //let zoomArray: [Float] = Array(self.audio.fftData[20...80])
-            //let zoomArray: [Float] = Array(self.audio.fftData[20...150])
+            // Find the peak in the FFT data for the zoomed-in graph
+            let fftData = self.audio.fftData
+            guard !fftData.isEmpty else { return }
+
+            // Define the range to search for peaks (e.g., skip first 20 low frequencies)
+            let searchRange = 20..<fftData.count
+            
+            // Find the index of the maximum peak in the FFT data within the search range
+            let peakIndex = fftData[searchRange].enumerated().max(by: { $0.element < $1.element })?.offset ?? 0
+            let adjustedPeakIndex = peakIndex + searchRange.lowerBound // Adjust for offset
+
+            // Define a window size to focus on around the peak
+            let windowSize = 200 // Can be adjusted depending on how much data to show
+            let halfWindowSize = windowSize / 2
+            
+            // Calculate the range around the peak, making sure it stays within bounds
+            let startIdx = max(0, adjustedPeakIndex - halfWindowSize)
+            let endIdx = min(fftData.count - 1, adjustedPeakIndex + halfWindowSize)
+            let subArray = Array(fftData[startIdx...endIdx])
+
+            // Update the zoomed-in graph (this should be the lower graph)
             graph.updateGraph(
-                data: zoomArray,
-                forKey: "fftZoomed"
+                data: subArray,
+                forKey: "fftZoomed" 
             )
         }
-    } //end of #4
+    }
     
     
     //adding this #5
@@ -193,6 +237,72 @@ class ModuleBViewController: UIViewController {
             // Use the detected frequency to determine gesture direction
             recognizeGesture(currentFrequency)
     }
+                        /*private func recognizeGesture(_ frequency: Float) {
+                                let frequencyDifference = frequency - previousFrequency
+
+                                // Adjust the threshold to a smaller value for testing
+                                let threshold: Float = 1.0 // Test with a smaller threshold
+                                
+                                // Print frequency values for debugging
+                                print("Current Frequency: \(frequency), Previous Frequency: \(previousFrequency), Difference: \(frequencyDifference)")
+
+                                // Use the adjusted threshold
+                                if abs(frequencyDifference) < threshold {
+                                    DispatchQueue.main.async {
+                                        self.gestureLabel.text = "Gesture Detected: No Movement"
+                                    }
+                                    return // Ignore small changes
+                                }
+
+                                var gestureText = ""
+                                if frequencyDifference > 0 {
+                                    gestureText = "Gesture Detected: Moving Towards"
+                                } else if frequencyDifference < 0 {
+                                    gestureText = "Gesture Detected: Moving Away"
+                                }
+
+                                DispatchQueue.main.async {
+                                    self.gestureLabel.text = gestureText
+                                }
+
+                                // Update previous frequency for next analysis
+                                previousFrequency = frequency
+                            }
+
+                            // Update processMicrophoneInput to call recognizeGesture with smoothed frequency
+                            private func processMicrophoneInput(data: UnsafeMutablePointer<Float>?, numFrames: UInt32, numChannels: UInt32) {
+                                guard let data = data else { return }
+                                
+                                // Perform FFT on the incoming audio data to get frequency spectrum
+                                let fftData = performFFT(on: data, with: numFrames)
+                                
+                                // Analyze the frequency data to detect shifts
+                                currentFrequency = analyzeFrequencyData(fftData)
+                                
+                                // Update the frequency buffer and calculate the smoothed frequency
+                                updateFrequencyBuffer(with: currentFrequency)
+                                let smoothedFrequency = calculateSmoothedFrequency()
+                                
+                                // Use the detected frequency to determine gesture direction
+                                recognizeGesture(smoothedFrequency) // Pass the smoothed frequency
+                            }*/
+    //hereeee
+//    private func processMicrophoneInput(data: UnsafeMutablePointer<Float>?, numFrames: UInt32, numChannels: UInt32) {
+//        guard let data = data else { return }
+//        
+//        // Perform FFT on the incoming audio data to get frequency spectrum
+//        let fftData = performFFT(on: data, with: numFrames)
+//        
+//        // Analyze the frequency data to detect shifts
+//        currentFrequency = analyzeFrequencyData(fftData)
+//        
+//        // Update the frequency buffer and calculate the smoothed frequency
+//        updateFrequencyBuffer(with: currentFrequency)
+//        let smoothedFrequency = calculateSmoothedFrequency()
+//        
+//        // Use the detected frequency to determine gesture direction
+//        recognizeGesture(smoothedFrequency)
+//    }
     
 //    //adding this #8
 //    private func updateFrequencyBuffer(with frequency: Float) {
@@ -285,12 +395,94 @@ class ModuleBViewController: UIViewController {
         
         return frequency
     }
+    
+    
+    //added here
+//    private func processMicrophoneInput(data: UnsafeMutablePointer<Float>?, numFrames: UInt32, numChannels: UInt32) {
+//        guard let data = data else { return }
+//
+//        print("Number of frames: \(numFrames)")
+//        
+//        // Perform FFT on microphone input
+//        let fftData = performFFT(on: data, with: numFrames)
+//
+//        // Use the more sophisticated gesture detection from ModuleB
+//        detectGesture(fftData)
+//    }
+//
+//    // This is your new gesture detection function
+//    private func detectGesture(_ fftData: [Float]) {
+//        // Find the index of the peak magnitude
+//        guard let maxIndex = fftData.firstIndex(of: fftData.max()!) else { return }
+//        
+//        // Calculate the corresponding frequency of the peak
+//        let peakFrequency = frequencyFromIndex(maxIndex)
+//
+//        // Define the range for the band-pass filter
+//        let bandWidth: Float = 1000.0 // Adjust as needed
+//        let lowerFrequencyBound = max(0, peakFrequency - bandWidth / 2)
+//        let upperFrequencyBound = min(Float(audio.samplingRate) / 2, peakFrequency + bandWidth / 2)
+//
+//        // Create a filtered magnitudes array
+//        var filteredMagnitudes = [Float](repeating: 0.0, count: fftData.count)
+//
+//        // Apply the band-pass filter
+//        for index in 0..<fftData.count {
+//            let frequency = frequencyFromIndex(index)
+//            if frequency >= lowerFrequencyBound && frequency <= upperFrequencyBound {
+//                filteredMagnitudes[index] = fftData[index]
+//            } else {
+//                filteredMagnitudes[index] = 0.0 // Zero out frequencies outside the range
+//            }
+//        }
+//
+//        // Repeat peak detection on filtered magnitudes
+//        guard let filteredMaxIndex = filteredMagnitudes.firstIndex(of: filteredMagnitudes.max()!) else { return }
+//
+//        // Define how many surrounding frequencies to check
+//        let range: Int = 20
+//        let filteredLowerBound = max(0, filteredMaxIndex - range)
+//        let filteredUpperBound = min(filteredMagnitudes.count - 1, filteredMaxIndex + range)
+//
+//        // Get magnitudes for peak and surrounding frequencies
+//        let peakMagnitude = filteredMagnitudes[filteredMaxIndex]
+//
+//        // Calculate average magnitudes for better sensitivity
+//        let lowerMagnitudes = filteredMagnitudes[filteredLowerBound..<filteredMaxIndex]
+//        let upperMagnitudes = filteredMagnitudes[(filteredMaxIndex + 1)...filteredUpperBound]
+//
+//        let averageLowerMagnitude = lowerMagnitudes.isEmpty ? 0 : lowerMagnitudes.reduce(0, +) / Float(lowerMagnitudes.count)
+//        let averageUpperMagnitude = upperMagnitudes.isEmpty ? 0 : upperMagnitudes.reduce(0, +) / Float(upperMagnitudes.count)
+//
+//        let sensitivityFactor: Float = 10.0 // Adjust this to increase sensitivity
+//
+//        if averageLowerMagnitude > averageUpperMagnitude + sensitivityFactor {
+//            DispatchQueue.main.async {
+//                self.gestureLabel.text = "Gesture Detected: Moving Away"
+//            }
+//        } else if averageUpperMagnitude > averageLowerMagnitude + sensitivityFactor {
+//            DispatchQueue.main.async {
+//                self.gestureLabel.text = "Gesture Detected: Moving Towards"
+//            }
+//        } else {
+//            DispatchQueue.main.async {
+//                self.gestureLabel.text = "No Gesture Detected"
+//            }
+//        }
+//    }
+//
+//    // Convert FFT index to actual frequency in Hz
+//    private func frequencyFromIndex(_ index: Int) -> Float {
+//        let nyquist = Float(audio.samplingRate) / 2.0 // Calculate Nyquist frequency
+//        return Float(index) * nyquist / Float(AudioConstants.AUDIO_BUFFER_SIZE / 2) // Convert index to frequency
+//    }
 
     private func recognizeGesture(_ frequency: Float) {
        let frequencyDifference = frequency - previousFrequency //frequency is smoothed frequency
        // let frequencyDifference = frequency - previousSmoothedFrequency
         
-        let threshold: Float = 0.5 // Set this value based on your needs
+       // let threshold: Float = 0.5 // Set this value based on your needs
+        let threshold: Float = 1.0
 
             // Ignore changes smaller than the threshold
             if abs(frequencyDifference) < threshold {
@@ -338,39 +530,67 @@ class ModuleBViewController: UIViewController {
 //                previousSmoothedFrequency = frequency
     }
     
+    //HEREEEEE
+//    private func recognizeGesture(_ frequency: Float) {
+//        let frequencyDifference = frequency - previousFrequency
+//
+//        let threshold: Float = 50.0
+//        
+//        // Use the adjusted threshold
+//        if abs(frequencyDifference) < threshold {
+//            DispatchQueue.main.async {
+//                self.gestureLabel.text = "Gesture Detected: No Movement"
+//            }
+//            return // Ignore small changes
+//        }
+//
+//        var gestureText = ""
+//        if frequencyDifference > 0 {
+//            gestureText = "Gesture Detected: Moving Towards"
+//        } else if frequencyDifference < 0 {
+//            gestureText = "Gesture Detected: Moving Away"
+//        }
+//
+//        DispatchQueue.main.async {
+//            self.gestureLabel.text = gestureText
+//        }
+//
+//        // Update previous frequency for next analysis
+//        previousFrequency = frequency
+//    }
+    
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         audio.pause()
     }
 
-    
+//    private var frequencyBuffer: [Float] = []
+//    private let bufferSize = 5
+//
+//    private func updateFrequencyBuffer(with frequency: Float) {
+//        frequencyBuffer.append(frequency)
+//        
+//        // Keep the buffer at a fixed size
+//        if frequencyBuffer.count > bufferSize {
+//            frequencyBuffer.removeFirst()
+//        }
+//    }
+//
+//    private func calculateSmoothedFrequency() -> Float {
+//        // Calculate the moving average of the buffer
+//        let sum = frequencyBuffer.reduce(0, +)
+//        let smoothedFrequency = sum / Float(frequencyBuffer.count)
+//        
+//        return smoothedFrequency
+//    }
     
     
     
     
     /*
     
-    
-    func setupGraph() {
-        if let graph = self.graph {
-            graph.setBackgroundColor(r: 0, g: 0, b: 0, a: 1)
-
-            graph.addGraph(withName: "fft",
-                           shouldNormalizeForFFT: true,
-                           numPointsInGraph: AudioConstants.AUDIO_BUFFER_SIZE / 2)
-            graph.addGraph(withName: "fft_zoomed",
-                           shouldNormalizeForFFT: true,
-                           numPointsInGraph: AudioConstants.AUDIO_BUFFER_SIZE / 20)
-            graph.addGraph(withName: "time",
-                           numPointsInGraph: AudioConstants.AUDIO_BUFFER_SIZE)
-            graph.addGraph(withName: "20 Pts Graph",
-                           shouldNormalizeForFFT: true,
-                           numPointsInGraph: 20)
-
-            graph.makeGrids()
-        }
-    }
+   
 
     func updateGraph() {
         if let graph = self.graph {
@@ -400,7 +620,7 @@ class ModuleBViewController: UIViewController {
 }
 
 
-
+//ENDS HEREEEEEEEE
 
 
 
