@@ -30,71 +30,129 @@ class ModuleBViewController: UIViewController {
         private var sineWaveRepeatMax:Float = Float(2*Double.pi)
         
         private var emittedFrequency: Float = 17000.0 // Default starting frequency
-            private var baselineLowerMagnitudes: [Float] = []
-            private var baselineUpperMagnitudes: [Float] = []
-            private var isBaselineCaptured = false
-            private var baselineCaptureTime: Double = 3.0 // Capture baseline for 3 seconds
-            private var baselineCaptureStart: Date?
-            private var sensitivityFactor: Float = 0.6 // Adjust based on testing
+        private var baselineLowerMagnitudes: [Float] = []
+        private var baselineUpperMagnitudes: [Float] = []
+        private var isBaselineCaptured = false
+        private var baselineCaptureTime: Double = 3.0 // Capture baseline for 3 seconds
+        private var baselineCaptureStart: Date?
+        private var sensitivityFactor: Float = 0.6 // Adjust based on testing
+    
+    //adding this #1
+        lazy var graph:MetalGraph? = {
+            return MetalGraph(userView: self.userView)
+        }()
+        
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.view.backgroundColor = .white
+        
+        //adding this #2
+        if let graph = self.graph{
+            graph.setBackgroundColor(r: 0, g: 0, b: 0, a: 1)
             
-            override func viewDidLoad() {
-                super.viewDidLoad()
-                self.view.backgroundColor = .white
-                
-                hzSlider.addTarget(self, action: #selector(self.sliderValueChanged(_:)), for: .valueChanged)
-                
-                startMicrophoneProcessing()
-                startProcessingSinewaveForPlayback(withFreq: emittedFrequency)
-                
-                // Start capturing baseline
-                baselineCaptureStart = Date()
+            graph.addGraph(withName: "fft",
+                           shouldNormalizeForFFT: true,
+                           numPointsInGraph: AudioConstants.AUDIO_BUFFER_SIZE/2)
+            
+            graph.addGraph(withName: "fftZoomed",
+                           shouldNormalizeForFFT: true,
+                           numPointsInGraph: AudioConstants.AUDIO_BUFFER_SIZE/20)
+            
+            baselineCaptureStart = Date()
+            
+            graph.makeGrids()
+            
+        } //end of #2
+               
+        Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            self.updateGraph()
+            self.detectGesture(self.audio.fftData)
+        }
+        hzSlider.addTarget(self,action:#selector(self.sliderValueChanged(_:)),for:UIControl.Event.valueChanged)
+        
+        audio.startProcessingSinewaveForPlayback(withFreq: emittedFrequency)
+        audio.startMicrophoneProcessing(withFps: 20) // preferred number of FFT calculations per second
+        
+        audio.play()
+        
+    }//end of viewdidload
+    
+    func updateGraph() {
+            if let graph = self.graph {
+                // Update the main FFT graph (in dB)
+                graph.updateGraph(
+                    data: self.audio.fftData,
+                    forKey: "fft"
+                )
+
+                let zoomArray: [Float] = Array(self.audio.fftData[20...])
+                //let zoomArray: [Float] = Array(self.audio.fftData[20...80])
+                //let zoomArray: [Float] = Array(self.audio.fftData[20...150])
+                graph.updateGraph(
+                    data: zoomArray,
+                    forKey: "fftZoomed"
+                )
             }
+        } //end of #4
+            
+//            override func viewDidLoad() {
+//                super.viewDidLoad()
+//                self.view.backgroundColor = .white
+//                
+//                hzSlider.addTarget(self, action: #selector(self.sliderValueChanged(_:)), for: .valueChanged)
+//                
+//                startMicrophoneProcessing()
+//                startProcessingSinewaveForPlayback(withFreq: emittedFrequency)
+//                
+//                // Start capturing baseline
+//                baselineCaptureStart = Date()
+//            }
             
             @IBAction func sliderValueChanged(_ sender: Any) {
                 let emittedFrequency = 17000 + (3000 * hzSlider.value)
-                startProcessingSinewaveForPlayback(withFreq: emittedFrequency)
+                audio.startProcessingSinewaveForPlayback(withFreq: emittedFrequency)
             }
             
-            func startProcessingSinewaveForPlayback(withFreq: Float = 330.0) {
-                let sampleRate: Float = 44100.0
-                phaseIncrement = (2.0 * .pi * withFreq) / sampleRate
-                
-                if let manager = self.audioManager {
-                    manager.outputBlock = self.handleSpeakerQueryWithSinusoid
-                    manager.play()
-                }
-            }
-            
-            private func handleSpeakerQueryWithSinusoid(data: Optional<UnsafeMutablePointer<Float>>, numFrames: UInt32, numChannels: UInt32) {
-                if let arrayData = data {
-                    var i = 0
-                    let chan = Int(numChannels)
-                    let frame = Int(numFrames)
-                    if chan == 1 {
-                        while i < frame {
-                            arrayData[i] = sin(phase)
-                            phase += phaseIncrement
-                            if phase >= sineWaveRepeatMax { phase -= sineWaveRepeatMax }
-                            i += 1
-                        }
-                    } else if chan == 2 {
-                        let len = frame * chan
-                        while i < len {
-                            arrayData[i] = sin(phase)
-                            arrayData[i + 1] = arrayData[i]
-                            phase += phaseIncrement
-                            if phase >= sineWaveRepeatMax { phase -= sineWaveRepeatMax }
-                            i += 2
-                        }
-                    }
-                }
-            }
-            
-            private func startMicrophoneProcessing() {
-                audioManager?.inputBlock = { [weak self] data, numFrames, numChannels in
-                    self?.processMicrophoneInput(data: data, numFrames: numFrames, numChannels: numChannels)
-                }
-            }
+//            func startProcessingSinewaveForPlayback(withFreq: Float = 330.0) {
+//                let sampleRate: Float = 44100.0
+//                phaseIncrement = (2.0 * .pi * withFreq) / sampleRate
+//                
+//                if let manager = self.audioManager {
+//                    manager.outputBlock = self.handleSpeakerQueryWithSinusoid
+//                    manager.play()
+//                }
+//            }
+//            
+//            private func handleSpeakerQueryWithSinusoid(data: Optional<UnsafeMutablePointer<Float>>, numFrames: UInt32, numChannels: UInt32) {
+//                if let arrayData = data {
+//                    var i = 0
+//                    let chan = Int(numChannels)
+//                    let frame = Int(numFrames)
+//                    if chan == 1 {
+//                        while i < frame {
+//                            arrayData[i] = sin(phase)
+//                            phase += phaseIncrement
+//                            if phase >= sineWaveRepeatMax { phase -= sineWaveRepeatMax }
+//                            i += 1
+//                        }
+//                    } else if chan == 2 {
+//                        let len = frame * chan
+//                        while i < len {
+//                            arrayData[i] = sin(phase)
+//                            arrayData[i + 1] = arrayData[i]
+//                            phase += phaseIncrement
+//                            if phase >= sineWaveRepeatMax { phase -= sineWaveRepeatMax }
+//                            i += 2
+//                        }
+//                    }
+//                }
+//            }
+//            
+//            private func startMicrophoneProcessing() {
+//                audioManager?.inputBlock = { [weak self] data, numFrames, numChannels in
+//                    self?.processMicrophoneInput(data: data, numFrames: numFrames, numChannels: numChannels)
+//                }
+//            }
             
             private func processMicrophoneInput(data: UnsafeMutablePointer<Float>?, numFrames: UInt32, numChannels: UInt32) {
                 guard let data = data else { return }
@@ -103,6 +161,7 @@ class ModuleBViewController: UIViewController {
                 let fftData = performFFT(on: data, with: numFrames)
                 
                 // Analyze frequency and detect gesture
+                print("calling detectGesture")
                 detectGesture(fftData)
             }
             
@@ -129,6 +188,7 @@ class ModuleBViewController: UIViewController {
             private var previousFFTData: [Float] = []
             
             private func detectGesture(_ fftData: [Float]) {
+                print("!!!")
                 guard let maxIndex = fftData.firstIndex(of: fftData.max()!) else { return }
                 
                 let range = 20
@@ -156,18 +216,22 @@ class ModuleBViewController: UIViewController {
                 let upperChange = calculateAverageChange(currentMagnitudes: currentUpperMagnitudes, baselineMagnitudes: baselineUpperMagnitudes)
                 
                 if lowerChange > sensitivityFactor {
-                    DispatchQueue.main.async {
+                    print("1")
+                    //DispatchQueue.main.async {
                         self.gestureLabel.text = "Gesture Detected: Moving Away"
-                    }
+                   // }
                 } else if upperChange > sensitivityFactor {
-                    DispatchQueue.main.async {
+                    print("2")
+                    //DispatchQueue.main.async {
                         self.gestureLabel.text = "Gesture Detected: Moving Towards"
-                    }
+                    // }
                 } else {
-                    DispatchQueue.main.async {
+                    print("3")
+                    //DispatchQueue.main.async {
                         self.gestureLabel.text = "No Gesture Detected"
-                    }
+                   // }
                 }
+                //self.gestureLabel.text = "test"
                 
                 previousFFTData = fftData
             }
@@ -186,6 +250,6 @@ class ModuleBViewController: UIViewController {
             
             override func viewDidDisappear(_ animated: Bool) {
                 super.viewDidDisappear(animated)
-                audio.pause()
+                self.audio.pause()
             }
         }
