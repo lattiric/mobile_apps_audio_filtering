@@ -68,7 +68,9 @@ class AudioModel {
 //        }
         if let manager = self.audioManager{
             manager.pause()
+            manager.outputBlock = nil
         }
+        
     }
     
     
