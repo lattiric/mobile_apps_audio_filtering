@@ -11,6 +11,7 @@ import Accelerate
 
 class ModuleBViewController: UIViewController {
     @IBOutlet weak var userView: UIView!
+    
     @IBOutlet weak var gestureLabel: UILabel!
     
     @IBOutlet weak var hzSlider: UISlider!
