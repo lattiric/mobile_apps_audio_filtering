@@ -18,13 +18,22 @@ class ModuleAViewController: UIViewController {
     }
     @IBOutlet weak var freq1Label: UILabel!
     
+   
+    
     @IBOutlet weak var freq2Label: UILabel!
     
+
     @IBOutlet weak var freq1: UILabel!
+    
+   
     
     @IBOutlet weak var freq2: UILabel!
     
+  
+    
     @IBOutlet weak var vowelLabel: UILabel!
+    
+   
     
     var cur_hz_1: Double = 0.0
     var cur_hz_2: Double = 0.0
